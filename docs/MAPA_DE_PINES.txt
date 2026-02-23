@@ -1,0 +1,91 @@
+====================================================
+PROYECTO: TABLERO DE VOLEY
+MICROCONTROLADOR: ESP32-WROOM
+AUTOR: GabrielElectron
+FECHA: 2026
+====================================================
+
+DESCRIPCION GENERAL
+-------------------
+Este documento describe la asignación de pines del ESP32
+utilizados en el tablero electrónico de vóley.
+
+Todas las señales son salidas digitales configuradas
+como pulsos tipo clock o reset hacia la electrónica
+de contadores del tablero.
+
+
+====================================================
+ASIGNACION DE PINES
+====================================================
+
+GPIO18  -> CLK_LOCAL
+Funcion:
+Genera pulso de incremento para el marcador del equipo local.
+
+GPIO19  -> CLK_VISITA
+Funcion:
+Genera pulso de incremento para el marcador del equipo visitante.
+
+GPIO21  -> CLK_SETS
+Funcion:
+Genera pulso de incremento para el contador de sets.
+
+GPIO22  -> RST_LOCAL
+Funcion:
+Reset del marcador del equipo local.
+
+GPIO23  -> RST_VISITA
+Funcion:
+Reset del marcador del equipo visitante.
+
+GPIO17  -> RST_SETS
+Funcion:
+Reset del contador de sets.
+
+GPIO16  -> CLK_RESTA_LOCAL
+Funcion:
+Pulso de decremento para el marcador local.
+
+GPIO14  -> CLK_RESTA_VISITA
+Funcion:
+Pulso de decremento para el marcador visitante.
+
+GPIO13  -> BOCINA_RELE
+Funcion:
+Activa relé que energiza la bocina.
+Debe manejarse con transistor y diodo de protección.
+
+
+====================================================
+CONFIGURACION ELECTRICA
+====================================================
+
+- Todas las salidas trabajan a 3.3V.
+- Si la lógica del tablero es 5V, debe utilizarse
+  adaptación de nivel (transistor o buffer).
+
+- El relé debe tener:
+    * Transistor NPN
+    * Resistencia base (~1k - 4.7k)
+    * Diodo flyback en bobina
+
+
+====================================================
+NOTAS IMPORTANTES
+====================================================
+
+1. Evitar usar pines:
+   GPIO34, 35, 36, 39 (solo entrada)
+   GPIO6 a 11 (Flash interna)
+
+2. Estados seguros al arrancar:
+   Todas las salidas deben inicializarse en LOW.
+
+3. Pulsos recomendados:
+   Duración de pulso: 10ms a 30ms.
+
+
+====================================================
+FIN DEL DOCUMENTO
+====================================================
