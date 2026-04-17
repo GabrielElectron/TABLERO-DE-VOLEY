@@ -1,0 +1,12 @@
+# Writing all output to: C:\Users\wintt\OneDrive\Escritorio\Gaby\PROYECTOS\TABLERO DE VOLEY\PROTEUS_TABLERO_D_V\TABLERO DE VOLEY.log
+set pad_wire_necking on
+bus diagonal
+fanout 5
+route 50
+clean 2
+route 50 16
+clean 2
+filter 5
+recorner diagonal
+status_file
+
