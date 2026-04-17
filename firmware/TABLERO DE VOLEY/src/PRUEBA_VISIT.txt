@@ -1,0 +1,87 @@
+#include <Arduino.h>
+
+// =========================
+// PINES
+// =========================
+#define UP_VISITA      19
+#define DOWN_VISITA    14
+#define RST_VISITA     23
+
+// =========================
+// CONFIG
+// =========================
+const int PULSO_US = 50;
+
+// =========================
+// FUNCIONES
+// =========================
+
+// Pulso UP (incremento)
+void sumaVisita() {
+  digitalWrite(DOWN_VISITA, HIGH);   // asegurar inactivo
+
+  digitalWrite(UP_VISITA, LOW);
+  delayMicroseconds(PULSO_US);
+  digitalWrite(UP_VISITA, HIGH);
+}
+
+// Pulso DOWN (decremento)
+void restaVisita() {
+  digitalWrite(UP_VISITA, HIGH);     // asegurar inactivo
+
+  digitalWrite(DOWN_VISITA, LOW);
+  delayMicroseconds(PULSO_US);
+  digitalWrite(DOWN_VISITA, HIGH);
+}
+
+// Reset
+void resetVisita() {
+  digitalWrite(RST_VISITA, HIGH);    // activar reset
+  delay(5);
+  digitalWrite(RST_VISITA, LOW);     // volver a normal
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(UP_VISITA, OUTPUT);
+  pinMode(DOWN_VISITA, OUTPUT);
+  pinMode(RST_VISITA, OUTPUT);
+
+  // Estados iniciales correctos
+  digitalWrite(UP_VISITA, HIGH);
+  digitalWrite(DOWN_VISITA, HIGH);
+  digitalWrite(RST_VISITA, LOW);   // 🔥 FUNDAMENTAL
+
+  Serial.println("=== TEST VISITA 74LS192 ===");
+  Serial.println("U = SUMA");
+  Serial.println("R = RESTA");
+  Serial.println("S = RESET");
+}
+
+void loop() {
+  if (Serial.available()) {
+    char c = Serial.read();
+
+    switch (c) {
+
+      case 'U':
+      case 'u':
+        Serial.println("+1 VISITA");
+        sumaVisita();
+        break;
+
+      case 'R':
+      case 'r':
+        Serial.println("-1 VISITA");
+        restaVisita();
+        break;
+
+      case 'S':
+      case 's':
+        Serial.println("RESET VISITA");
+        resetVisita();
+        break;
+    }
+  }
+}
