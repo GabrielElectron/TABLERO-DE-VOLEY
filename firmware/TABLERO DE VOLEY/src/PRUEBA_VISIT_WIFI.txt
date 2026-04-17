@@ -1,0 +1,215 @@
+#include <WiFi.h>
+#include <WebServer.h>
+
+// =========================
+// PINES
+// =========================
+#define UP_VISITA      19
+#define DOWN_VISITA    14
+#define RST_VISITA     23
+
+// =========================
+// WIFI
+// =========================
+const char* ssid = "TABLERO_VOLEY";
+const char* password = "12345678";
+
+WebServer server(80);
+
+// =========================
+// CONFIG
+// =========================
+const int PULSO_US = 50;
+const int RESET_MS = 5;
+const int BLOQUEO_MS = 180;   // evita doble toque muy seguido
+
+unsigned long ultimoComando = 0;
+
+// =========================
+// FUNCIONES 74LS192
+// =========================
+bool bloqueado() {
+  unsigned long ahora = millis();
+  if (ahora - ultimoComando < BLOQUEO_MS) return true;
+  ultimoComando = ahora;
+  return false;
+}
+
+void estadoReposo() {
+  digitalWrite(UP_VISITA, HIGH);
+  digitalWrite(DOWN_VISITA, HIGH);
+  digitalWrite(RST_VISITA, LOW);   // CLR inactivo
+}
+
+void sumaVisita() {
+  digitalWrite(RST_VISITA, LOW);
+  digitalWrite(DOWN_VISITA, HIGH);
+
+  digitalWrite(UP_VISITA, LOW);
+  delayMicroseconds(PULSO_US);
+  digitalWrite(UP_VISITA, HIGH);
+}
+
+void restaVisita() {
+  digitalWrite(RST_VISITA, LOW);
+  digitalWrite(UP_VISITA, HIGH);
+
+  digitalWrite(DOWN_VISITA, LOW);
+  delayMicroseconds(PULSO_US);
+  digitalWrite(DOWN_VISITA, HIGH);
+}
+
+void resetVisita() {
+  digitalWrite(UP_VISITA, HIGH);
+  digitalWrite(DOWN_VISITA, HIGH);
+
+  digitalWrite(RST_VISITA, HIGH);
+  delay(RESET_MS);
+  digitalWrite(RST_VISITA, LOW);
+}
+
+// =========================
+// HTML
+// =========================
+String paginaHTML() {
+  String html = R"rawliteral(
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tablero Voley - Visita</title>
+  <style>
+    body{
+      margin:0;
+      font-family:Arial, Helvetica, sans-serif;
+      background:#10131a;
+      color:white;
+      text-align:center;
+    }
+    .wrap{
+      max-width:500px;
+      margin:0 auto;
+      padding:30px 20px;
+    }
+    h1{
+      margin-bottom:10px;
+      font-size:32px;
+    }
+    p{
+      opacity:0.9;
+      margin-bottom:25px;
+    }
+    .btn{
+      display:block;
+      width:100%;
+      box-sizing:border-box;
+      padding:22px;
+      margin:14px 0;
+      border:none;
+      border-radius:16px;
+      font-size:28px;
+      font-weight:bold;
+      text-decoration:none;
+      color:white;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sumar{ background:#16a34a; }
+    .restar{ background:#dc2626; }
+    .reset{ background:#2563eb; }
+    .info{
+      margin-top:25px;
+      font-size:18px;
+      opacity:0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>VISITA</h1>
+    <p>Control por Wi-Fi</p>
+
+    <a class="btn sumar" href="/up">+1 SUMAR</a>
+    <a class="btn restar" href="/down">-1 RESTAR</a>
+    <a class="btn reset" href="/reset">RESET</a>
+
+    <div class="info">IP: 192.168.4.1</div>
+  </div>
+</body>
+</html>
+)rawliteral";
+  return html;
+}
+
+// =========================
+// RUTAS WEB
+// =========================
+void handleRoot() {
+  server.send(200, "text/html", paginaHTML());
+}
+
+void handleUp() {
+  if (!bloqueado()) {
+    sumaVisita();
+    Serial.println("SUMA VISITA");
+  }
+  server.sendHeader("Location", "/");
+  server.send(303);
+}
+
+void handleDown() {
+  if (!bloqueado()) {
+    restaVisita();
+    Serial.println("RESTA VISITA");
+  }
+  server.sendHeader("Location", "/");
+  server.send(303);
+}
+
+void handleReset() {
+  if (!bloqueado()) {
+    resetVisita();
+    Serial.println("RESET VISITA");
+  }
+  server.sendHeader("Location", "/");
+  server.send(303);
+}
+
+// =========================
+// SETUP
+// =========================
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(UP_VISITA, OUTPUT);
+  pinMode(DOWN_VISITA, OUTPUT);
+  pinMode(RST_VISITA, OUTPUT);
+
+  estadoReposo();
+
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(ssid, password);
+
+  Serial.println();
+  Serial.println("=== TABLERO VOLEY WIFI ===");
+  Serial.print("Red: ");
+  Serial.println(ssid);
+  Serial.print("IP: ");
+  Serial.println(WiFi.softAPIP());
+
+  server.on("/", handleRoot);
+  server.on("/up", handleUp);
+  server.on("/down", handleDown);
+  server.on("/reset", handleReset);
+
+  server.begin();
+  Serial.println("Servidor web iniciado");
+}
+
+// =========================
+// LOOP
+// =========================
+void loop() {
+  server.handleClient();
+}
